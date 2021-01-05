@@ -1,0 +1,150 @@
+ \documentclass[pdftex,12pt,a4paper]{article}
+
+\usepackage{graphicx}  
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{breakcites}
+\usepackage{indentfirst}
+\usepackage{pgfgantt}
+\usepackage{pdflscape}
+\usepackage{float}
+\usepackage{epsfig}
+\usepackage{epstopdf}
+\usepackage[cmex10]{amsmath}
+\usepackage{stfloats}
+\usepackage{multirow}
+
+\renewcommand{\refname}{REFERENCES}
+\linespread{1.3}
+
+\usepackage{mathtools}
+%\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\thispagestyle{empty}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+\textbf{}\\
+\textbf{\Large{ISTANBUL TECHNICAL UNIVERSITY}}\\
+\vspace{0.5cm}
+\textbf{\Large{COMPUTER ENGINEERING DEPARTMENT}}\\
+\vspace{2cm}
+\textbf{\Large{BLG 351E\\ MICROCOMPUTER LABORATORY\\ EXPERIMENT REPORT}}\\
+\vspace{2.8cm}
+\begin{table}[ht]
+\centering
+\Large{
+\begin{tabular}{lcl}
+\textbf{EXPERIMENT NO}  & : & 7 \\
+\textbf{EXPERIMENT DATE}  & : & 03.01.2021 \\
+\textbf{LAB SESSION}  & : & WEDNESDAY - 13.30 \\
+\textbf{GROUP NO}  & : & 3 \\
+\end{tabular}}
+\end{table}
+\vspace{1cm}
+\textbf{\Large{GROUP MEMBERS:}}\\
+\begin{table}[ht]
+\centering
+\Large{
+\begin{tabular}{rcl}
+150170013  & : & ALİ KEREM YILDIZ \\
+150170082  & : & ARDA CÜCE \\
+150170908  & : & MUHAMMAD RIZA FAIRUZZABADI \\
+\end{tabular}}
+\end{table}
+\vspace{2.8cm}
+\textbf{\Large{FALL 2020-2021}}
+
+\end{center}
+
+\end{titlepage}
+
+\thispagestyle{empty}
+\addtocontents{toc}{\contentsline {section}{\numberline {}FRONT COVER}{}}
+\addtocontents{toc}{\contentsline {section}{\numberline {}CONTENTS}{}}
+\setcounter{tocdepth}{4}
+\tableofcontents
+\clearpage
+
+\setcounter{page}{1}
+
+\section{INTRODUCTION [10 points]}
+
+
+
+\section{MATERIALS AND METHODS [40 points]}
+\subsection{MATERIALS}
+\underline{Tools Used}\cite{booklet}
+\begin{itemize}
+    \item {Autodesk Tinkercad}
+    \item{Latex (overleaf.com)}
+    \item{Arduino Uno}
+    
+\end{itemize}
+
+This experiment is done via Autodesk Tinkercad Design Tool as well as the previous experiments. We used the 'Microcomputer Lab Intro' Lecture Notes as a reference regarding the overall structure of the board, alongside Arduino documentations regarding the concepts such as Flex Sensors, Micro Servos, Communication ProtocolS such as I2C, UART, SPI, CAN in the experiment. (only I2C and UART is used in this experiment others are for just discovering).
+
+\subsection{METHODS}
+\subsection{PART 1}
+In this part of experiment, we were tasked to program the SensorMC. It is connected to 4 2.2" Flex Sensors. Flex sensors, as its name indicates, are designed to be flexed, in one direction. The conductive ink printed on the sensor is what makes it/acts as a resistor. The resistor value changes when it is bent. In this part of the experiment, we were given the instruction to get the analog value of the sensors, determine what the resistance values are, and send them to our computer via UART (Universal Asynchronous Receiver Transmitter) protocol, alongside the angle value (of how much it is bent). To accomplish this task, we at first set some global variables. We set A0, A1, A2 and A3 that are connected to the sensors as 'flexPin's to be read with AnalogRead() later. We also set VCC float variable to 5, as voltage at Arduino 5V Line, and 100000 of R\_DIV resistor used to create a voltage divider which we'll use to in the calculation of the resistance value which will be explained below. In the setup() part, other than configuring pre-declared flexPins as INPUT, we also implemented TimerInterrupt, which method we did similarly in the previous experiment, to mantain the sampling frequency of 5Hz. Inside the function it calls, we read the value of flexPins with analogRead, which then initialized to ADCflexes (ADC Values). We then get the voltage values by multiplying that ADC values by VCC of 5, which then divided by 1023 (Arduino ADC max range)  within the calc\_Vflex (ADCflex * VCC / 1023.0) function. Then, we take the voltage value returned by that function to get the resistance value by calculating it with Rflex = R\_DIV * (VCC / (VCC - Vflex)) - R\_DIV equation within the calc\_Rflex function. Then we use that resistance values to get the angle values using our normalized code of map() function that map the resistance values with lower and upper bounds of current range being 29987.28 and 162982.00, precise values we got from our resistance value calculations when it is flat and when it is bent 180 degree. Having gotten the values needed to send, our program the does the same methods for every one of 4 flex sensors, which then later prints to the serial monitor in the format given in the experiment pdf file, with Serial.print() function. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{part1-1.png}	
+	\caption{Example of Flex sensors bent to varied angles}
+	\label{fig5}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{part1-2.png}	
+	\caption{Output Message of Part1}
+	\label{fig5}
+\end{figure}
+
+ 
+\subsection{PART 2}
+In this part of experiment we were tasked to program the ServoControllerMC. It is connected to 4 Micro Servos. The task was to implement the program that gets commands from the computer (Serial Monitor), and change the position of the servoe engies, while also giving output messages of the values, alongside failure messages for the possible errors that may be inputted. To accomplish what was asked, we at first declared some global variables. First 4 are integer values to store the angle value. Then flag and error variables that will be used for specific failure messages later. Furthermore in this part we use Arduino's Servo.h library, which also then enables us to tinker with the 4 servos, which each of them we also set globally before setup(). In the setup() function, we set the servos to their connected pins with attach() function, and change them to 90 degrees with write() function as default. In loop function(), we at first use an if() to only start the readings and checking of the data only when there's data available from the computer. Inside it, we at first read the first char of the data pattern with Serial.read(), getting the required '!' char that indicating the start of the patter. When it is true that it is particular char, we start reading, otherwise, we we give the failure message of "Error! There is no start char.", with serial.flush(), the program also waits for the transmission of outgoing serial data to complete before returning. As mentioned before, when the first char that's read is '!', the reading starts. we at first read the data until ';' with readStringUntil(). function. This reads the first angle value, we then store them to String 'temp', which is checked in ErrorChecker() function. Inside ErrorChecker function, we check the data for some failures. First, it checks if it is more than 180 degree, giving the failure message of "Error! Angle value must be less than 180". It also checks the length of the temp String. If it is 0, it gives failure message of "Error All parameter must be filled". Other than that, we check every char in the temp String with charAt() function to check invalid input, non-existence of end char, and extra input (more than 4), giving failure messages of "Error! Invalid Input.", "Error! There is no end char", and "Error! There is extra input input", respectively. Lastly, when every error is checked true, globally declared error value is set to 1. Again, with readStringUntil() function we continue reading the data, storing to temp, and check them with ErrorChecker() function. Only then for the last value, we read them until '\#' which indicates the end of the data. However instead of directly calling the ErrorChecker() function like before, we check its length, which if it is 0, it indicates that the given angles are less than 4, giving the failure message of "Error! There is not enough input.". After each of error checks, we set the temp value to integer with toInt() function, and storing them to globally pre-declared angle int variables. After reading completes, we change the servo engines position by writing the angle values to each of the servo. Lastly, when there's no error found (error = 0), the angle values of each values are print with Serial.print() values according to the output message pattern given in the experiment pdf file.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{part2-1.png}	
+	\caption{Condition where S0:0, S1:25, S2:36, S3:45}
+	\label{fig5}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{part2-2.png}	
+	\caption{Output Messages of Part2}
+	\label{fig5}
+\end{figure}
+
+
+\subsection{PART 3}
+In this part, our task was to get the angle values we calculated in part 1 from SensorMC, using I2C protocol send those values as a string to MasterMC and from MasterMC to ServoMC, in the end the sent angle values would be written to the respective servo engines as implemented in part 2. To get the angle values from SensorMC we used the same functions and timer interrupt we have used in part 1, and to send the information we first format it, we chose the format different than used in earlier parts to prevent any confusion, our format was as "angle1\_angle2\_angle3\_angle4:". We used wire.h library to perform I2C operations. We set SensorMC's device ID as 1, in setup() we initialized our board with Wire.begin(DEVICE\_ID) and created a onRequest function with Wire.onRequest(requestEvent), this requestEvent function simply prints the output to its serial monitor and sends the formatted output using Wire.write(output.c\_str()).
+In MasterMC's code we first initialized the I2C protocol with Wire.begin();
+since this is out master board we don't need to initialize it with ID. To recieve the sensor values from SensorMC we coded a function named readSensorMC, this function sends a request to SensorMC with Wire.requestFrom(DEVICE\_ID\_1, DEVICE\_1\_SIZE), the second parameter in this function represents the number of bytes to be requested, if the output string does not fill all the bytes than empty bytes would be represented as 'y' characters, however this does not cause any problems since our data ends with ':' so reading of data ends when that character is reached. After this request function while Wire.available $>$ 0, we read the sent data char by char using char c = Wire.read() and extend our global variable "output\_1" with c. After every char is written to output\_1 recieving the data part of part3 is completed. To send the recieved data from MasterMC to ServoMC, in MasterMC's code we wrote a function  sendtoServoMC(), this function is implemented simply by using 3 wire.h function, it starts with   Wire.beginTransmission(4) (our ServoMC board's ID is 4), Wire.write(output\_1.c\_str()) this part sends the formatted string to slave ServoMC board and function ends with Wire.endTransmission(). Inside MasterMC's loop function first readSensorMC() function is called and then sendtoServoMC(). In ServoMC we have 3 tasks to complete, first recieve data string from MasterMC, second parse the string to get angle values in integers and write the integer values to their respective servo engines. To parse the string we first initialize 4 strings, we loop through the original string until we hit '\_' character and write the characters up to that point into our first string variable, and then we loop through the remaining in the same manner using 3 more while loops. After our variable strings are filled with parse() function, we turn these strings into integers using getint function we have implemented. We send string typed angle variables to this function, we counted the characters until reach '\0', which gives us the size of string. Knowing the size in advance is important because, according to its size, we are going to make pow() operations to obtain angles integer value. Then via using for loop, we get each character and turn it to an integer by substracting it with '0'. After that, by using pow() function we calculate characters value according to its index number(index number shows whether it is ones digit or tens digit etc.). Then, by summing all of them, we evaluate the integer value of given string and returning it. To recieve the data from MasterMC we initialized SensorMC board with wire.begin(4) and wire.onRecieve(reciveEvent), inside the recieve event function we read the recieved data char by char using char c = Wire.read() and extending a string variable we called output\_1 with this c value. After reading into this output\_1 we call the parse() function inside recieveEvent that parses the output\_1 into strings of angle values, we convert these strings into integers using getInt and finally write the angle values into servo engines we had initialized with servo1.attach() using servo1.write(i\_first). An example of servos position according to flex sensors shown below.
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{part3.png}	
+	\caption{Servo engines positions with flex sensors}
+	\label{fig6}
+\end{figure}
+
+
+
+\section{RESULTS [15 points]}
+We learned how flex sensor is working, we detect its flatResistence, bendResistance and by using them we learned how to calculate the angle value linearly. This is important for all parts of experiment, because transmitted data is contains angle values. In order to synchronize by 5 hz sampling frequency, we use timer interrupt which is a acknowledgement from previous experiments. We understand that if proper communication medium was created, transmission part is not as complicated as thought. We mean by proper medium is, sending information with expected size, expected time etc. which we explain them in the beginning of this paragraph. After satisfying the conditions, protocols are easily implemented.
+
+
+\section{DISCUSSION [25 points]}
+In first part of experiment, we use flex sensors for getting analog values. In previous experiments, we read analog values from potentiometer etc. But this is the first time we read an analog value from the flex sensor which is actually quite exciting to us. The reason for that is, we learned one of its usage field which is robotics. For example flex sensor can be used in robot's glove to detect or control its movement. By reading analog value and transform it to angle value via our normalization function, we evaluate the angle value and Serial.print it with UART. The angle value is not exactly same as the expected value because we just consider it linear and calculate the angle value according to it which is not a fully correct approach. In second part of experiment, we learn UART Receive Data protocol which is simply reads value from the Serial. We gave some input messages and then protocol receive the data. By using Servo.h library we attach servo engines to pins and control them by giving received angle values. Servo engines take position according to given angle value as expected. Finally part3 we combine all acknowledgments that we learn in this experiment, in order to made it. We learned master-slave approach in I2C protocol and transmit data master-to-slave and slave-to-master. We learn some functions from Wire.h library to initiate devices and handle the request and receive events.
+\section{CONCLUSION [10 points]}
+In this experiment, first time we generated communication protocols between Arduinos and some libraries. We learn using some functions from Servo.h library to control the servo engines and Wire.h library to I2C protocol. In part1, we did not encounter any problem except, String casting. We do not understand why String casting changes value of variable. For example, assume that int angle = 180, String(angle) prints '188'. Then, we use proper data types to fix this problem. In part3, we encounter some synchronization problems and by using timer interrupt we fixed this problem too. In general, we did not encounter any big problems that related to communication protocols or function usages. All problems that we encountered are about string operations such printing casting. In some cases, we use c\_str() function to send or print proper results.
+\newpage
+\addcontentsline{toc}{section}{\numberline {}REFERENCES}
+
+\bibliographystyle{unsrt}
+\bibliography{reference}
+
+\end{document}
+
